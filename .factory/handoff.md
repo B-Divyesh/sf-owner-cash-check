@@ -37,4 +37,4 @@ Use `npm run dev` for development. `npm run build` emits the static PWA to `dist
 
 ### Known gaps / next steps
 
-There are no known release-blocking gaps. The static host applies response headers at deployment, so live header and deployed-asset identity are rechecked after the push/deploy completes.
+The repair commit `9dad6bf` was pushed to `main`. At handoff, the live endpoint still served the prior asset `/assets/main-JXZ_0cBV.js`, while this build emits `/assets/main-D8-rmarY.js`; the repository has no GitHub Actions/Pages workflow or checked-in static-host credential to invoke. Factory deployment therefore still needs to consume the pushed static artifact. After that external deployment runs, recheck the live JS SHA-256 against `dist`, CSP, immutable asset cache policy, manifest `application/manifest+json`, and the `/demo` flow. There are no remaining code-level release blockers.
