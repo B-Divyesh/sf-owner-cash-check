@@ -1,5 +1,3 @@
-import '@fontsource-variable/inter/wght.css';
-import '@fontsource/ibm-plex-mono/500.css';
 import './style.css';
 import { decryptBackup, encryptBackup, entriesToCSV } from './backup';
 import { loadData, saveData, validateImportedData } from './db';

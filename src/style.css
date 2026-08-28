@@ -1,3 +1,18 @@
+@font-face {
+  font-family: 'Inter Variable';
+  src: url('../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-display: optional;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2') format('woff2');
+  font-weight: 500;
+  font-display: optional;
+  font-style: normal;
+}
+
 :root {
   color-scheme: light;
   --paper: #f3f0e7;

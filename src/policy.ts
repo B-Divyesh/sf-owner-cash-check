@@ -1,5 +1,3 @@
-import '@fontsource-variable/inter/wght.css';
-import '@fontsource/ibm-plex-mono/500.css';
 import './style.css';
 
 export function renderPolicy(title: string, eyebrow: string, content: string) {
