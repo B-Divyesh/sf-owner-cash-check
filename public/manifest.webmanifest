@@ -3,7 +3,7 @@
   "name": "Owner Cash Check",
   "short_name": "Cash Check",
   "description": "A private 13-week cash check for owner-operated businesses.",
-  "start_url": "/?source=installed&v=1",
+  "start_url": "/?source=installed&v=2",
   "scope": "/",
   "display": "standalone",
   "background_color": "#F3F0E7",

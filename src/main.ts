@@ -1,9 +1,12 @@
 import './style.css';
 import { decryptBackup, encryptBackup, entriesToCSV } from './backup';
-import { loadData, saveData, validateImportedData } from './db';
+import { clearDemoData, loadData, saveData, validateImportedData } from './db';
 import { addDays, buildForecast, cashStatus, ForecastWeek, toISODate } from './forecast';
 import { cachedUnlock, captureLicenseFromUrl, checkoutUrl, clearLicense, getLicenseToken, storeLicense, verifyLicense } from './license';
 import { AppData, CashEntry, Confidence, emptyData, Recurrence } from './types';
+import { isDemoMode } from './mode';
+
+declare const __BUILD_ID__: string;
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 const today = () => toISODate(new Date());
@@ -11,13 +14,17 @@ const escapeHTML = (value: string) => value.replace(/[&<>'"]/g, (char) => ({ '&'
 const parseAmount = (value: FormDataEntryValue | null) => Number(String(value ?? '').replaceAll(',', ''));
 const uid = () => crypto.randomUUID();
 const displayDate = (date: string, options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }) => new Intl.DateTimeFormat(undefined, options).format(new Date(`${date}T12:00:00`));
+const demo = isDemoMode();
+const buildId = __BUILD_ID__;
 
 let data: AppData = emptyData();
 let selectedWeek = 0;
 let activeDialog: 'entry' | 'checkin' | 'data' | 'settings' | null = null;
 let editingEntryId: string | null = null;
-let isPro = cachedUnlock();
+let isPro = demo ? false : cachedUnlock();
 let notice = '';
+let dialogReturnAction: string | null = null;
+let dialogReturnIndex = 0;
 
 function money(value: number, compact = false) {
   const currency = data.settings?.currency ?? 'USD';
@@ -62,13 +69,15 @@ function shell(content: string) {
         <button class="text-button" data-action="open-checkin"><span aria-hidden="true">✓</span> Weekly check-in</button>
         <button class="primary small" data-action="open-entry"><span aria-hidden="true">＋</span> Add cash item</button>
         <button class="icon-button" data-action="open-data" aria-label="Data, backup, and license settings" title="Data and settings">•••</button>
-      </nav>` : ''}
+      </nav>` : `<nav aria-label="Site navigation"><a class="text-button" href="/demo">Try sample</a></nav>`}
     </header>
+    ${demo ? `<aside class="demo-banner" role="status"><strong>Demo — sample data, nothing is saved.</strong><span>Use the sample workshop plan to explore the forecast.</span><button class="text-button" data-action="reset-demo">Reset demo</button><button class="secondary" data-action="start-real">Start for real</button></aside>` : ''}
     ${content}
     <footer>
       <p>Your figures stay in this browser. No bank connection. No tracking.</p>
       <nav aria-label="Legal"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></nav>
       <p class="generated-note">Blueprint desk artwork was generated specifically for this product.</p>
+      <p class="build-note">Built by Param Factory · Build ${escapeHTML(buildId)}</p>
     </footer>
     <div id="save-status" class="toast" role="status" aria-live="polite">${escapeHTML(notice)}</div>
     <div id="update-toast" class="update-toast" hidden><span>An app update is ready.</span><button class="text-button" data-action="apply-update">Update now</button></div>
@@ -79,12 +88,14 @@ function onboarding() {
   return shell(`<main id="main" class="welcome">
     <section class="welcome-copy">
       <p class="eyebrow">13-week owner’s cash drawing</p>
-      <h1>Know what’s committed.<br><em>Know what’s safe.</em></h1>
+      <h1>See your next 13 weeks of cash.</h1>
       <p class="lede">Turn today’s bank balance, upcoming bills, expected invoices, and your reserve into one honest weekly cash check. No bank login. No accounting overhaul.</p>
+      <div class="demo-cta"><a class="primary button-link" href="/demo">Try it with sample data <span aria-hidden="true">→</span></a><span>Opens a sample workshop plan. Nothing is saved.</span></div>
+      <ul class="plain-facts" aria-label="Owner Cash Check facts"><li>Works offline after the first visit.</li><li>No bank login.</li><li>Your financial plan stays in this browser.</li></ul>
       <form id="setup-form" class="setup-form" novalidate>
         <div class="field-row">
-          <label><span>Balance today</span><span class="money-input"><span aria-hidden="true" id="setup-symbol">$</span><input name="balance" inputmode="decimal" autocomplete="off" required min="0" step="0.01" value="" /></span></label>
-          <label><span>Keep-back reserve</span><span class="money-input"><span aria-hidden="true">$</span><input name="reserve" inputmode="decimal" autocomplete="off" required min="0" step="0.01" value="" /></span></label>
+          <label><span>Balance today</span><span class="money-input"><span aria-hidden="true" id="setup-symbol">$</span><input name="balance" inputmode="decimal" autocomplete="off" required min="0" step="0.01" value="" aria-describedby="setup-error" /></span></label>
+          <label><span>Keep-back reserve</span><span class="money-input"><span aria-hidden="true">$</span><input name="reserve" inputmode="decimal" autocomplete="off" required min="0" step="0.01" value="" aria-describedby="setup-error" /></span></label>
         </div>
         <div class="field-row compact-row">
           <label><span>As of</span><input type="date" name="asOf" required value="${today()}" /></label>
@@ -247,7 +258,7 @@ function dataDialog() {
   return dialogFrame('Data & ownership', 'Local tools', `<div class="data-sections">
     <section><h3>Take your data with you</h3><p>Download a readable backup, a spreadsheet CSV, or a password-encrypted backup. Nothing is uploaded.</p><div class="button-cluster"><button class="secondary" data-action="export-json">Export JSON</button><button class="secondary" data-action="export-csv">Export CSV</button><button class="secondary" data-action="show-encrypt">Encrypted backup</button></div><form id="encrypt-form" class="inline-form" hidden><label><span>Backup password</span><input type="password" name="password" minlength="8" required autocomplete="new-password"></label><button class="primary" type="submit">Encrypt & download</button></form></section>
     <section><h3>Restore a backup</h3><p>Import a JSON or encrypted backup. This replaces the plan on this device after confirmation.</p><label class="file-button">Choose backup<input id="import-file" type="file" accept=".json,application/json"></label><form id="decrypt-form" class="inline-form" hidden><label><span>Backup password</span><input type="password" name="password" required autocomplete="current-password"></label><button class="primary" type="submit">Decrypt & restore</button></form><p class="form-error" id="data-error" aria-live="assertive"></p></section>
-    <section class="license-panel"><p class="eyebrow">Owner Cash Check Plus</p>${isPro ? `<h3>Plus is unlocked</h3><p>Repeat schedules are available on this device. License checks run at most once daily and never block the free forecast.</p><button class="text-button" data-action="remove-license">Remove license from this device</button>` : `<h3>Schedule repeats once. Keep the core forever.</h3><p><strong>$19 one-time.</strong> Unlock weekly and monthly repeat schedules. The full 13-week forecast, safety flags, check-ins, and every export remain free.</p><div class="button-cluster"><a class="primary button-link" href="${checkoutUrl}">Buy Plus securely</a><button class="secondary" data-action="show-license">Have a license?</button></div><form id="license-form" class="inline-form" hidden><label><span>License token</span><input name="license" autocomplete="off" required></label><button class="primary" type="submit">Verify & restore</button></form><small>Sociobot/Dodo is the merchant of record. Refunds are handled there and revoke the license. <a href="/terms/">Terms</a> · <a href="/privacy/">Privacy</a></small>`}</section>
+    <section class="license-panel"><p class="eyebrow">Owner Cash Check Plus</p>${isPro ? `<h3>Plus is unlocked</h3><p>Repeat schedules are available on this device. License verification never blocks the free forecast.</p><button class="text-button" data-action="remove-license">Remove license from this device</button>` : `<h3>Schedule repeats once. Keep the core forever.</h3><p><strong>$19 one-time.</strong> Unlock weekly and monthly repeat schedules. The full 13-week forecast, safety flags, check-ins, and every export remain free.</p><div class="button-cluster"><a class="primary button-link" href="${checkoutUrl}">Buy Plus securely</a><button class="secondary" data-action="show-license">Have a license?</button></div><form id="license-form" class="inline-form" hidden><label><span>License token</span><input name="license" autocomplete="off" required></label><button class="primary" type="submit">Verify & restore</button></form><small>Sociobot/Dodo is the merchant of record. Refunds are handled there and revoke the license. <a href="/terms/">Terms</a> · <a href="/privacy/">Privacy</a></small>`}</section>
     <section><h3>All schedule items <span class="count">${allEntries.length}</span></h3>${allEntries.length ? `<ul class="compact-list">${allEntries.map((entry) => `<li class="${entry.completed ? 'completed' : ''}"><span>${displayDate(entry.date)} · ${escapeHTML(entry.name)}</span><b>${entry.type === 'incoming' ? '+' : '−'}${money(entry.amount)}</b>${entry.completed ? `<button class="text-button" data-action="reopen-entry" data-id="${entry.id}">Restore</button>` : `<button class="text-button" data-action="edit-entry" data-id="${entry.id}">Edit</button>`}</li>`).join('')}</ul>` : '<p>No schedule items yet.</p>'}</section>
     <section class="danger-zone"><h3>Start over</h3><p>Delete the cash plan and check-in history from this browser. Export first if you may need it.</p><button class="danger-button" data-action="reset-data">Delete local plan…</button></section>
   </div>`, true);
@@ -263,12 +274,26 @@ function render() {
   }
 }
 
-function openDialog(which: typeof activeDialog, editId: string | null = null) {
+function openDialog(which: typeof activeDialog, editId: string | null = null, opener = document.activeElement as HTMLElement) {
+  if (!activeDialog) {
+    dialogReturnAction = opener.dataset.action ?? null;
+    dialogReturnIndex = dialogReturnAction ? Array.from(document.querySelectorAll<HTMLElement>(`[data-action="${dialogReturnAction}"]`)).indexOf(opener) : 0;
+  }
   activeDialog = which;
   editingEntryId = editId;
   render();
 }
-function closeDialog() { activeDialog = null; editingEntryId = null; render(); }
+function closeDialog() {
+  activeDialog = null;
+  editingEntryId = null;
+  render();
+  if (dialogReturnAction) {
+    const action = dialogReturnAction;
+    const index = dialogReturnIndex;
+    dialogReturnAction = null;
+    window.setTimeout(() => document.querySelectorAll<HTMLElement>(`[data-action="${action}"]`)[index]?.focus(), 0);
+  }
+}
 
 function bindEvents() {
   document.querySelectorAll<HTMLElement>('[data-action]').forEach((element) => element.addEventListener('click', handleAction));
@@ -296,10 +321,12 @@ async function submitSetup(event: Event) {
   event.preventDefault();
   const form = event.currentTarget as HTMLFormElement;
   const values = new FormData(form);
-  const balance = parseAmount(values.get('balance'));
-  const reserve = parseAmount(values.get('reserve'));
+  const balanceValue = String(values.get('balance') ?? '').trim();
+  const reserveValue = String(values.get('reserve') ?? '').trim();
+  const balance = parseAmount(balanceValue);
+  const reserve = parseAmount(reserveValue);
   const error = document.querySelector('#setup-error')!;
-  if (!Number.isFinite(balance) || !Number.isFinite(reserve) || balance < 0 || reserve < 0) { error.textContent = 'Enter a valid balance and a reserve of zero or more.'; return; }
+  if (!balanceValue || !reserveValue || !Number.isFinite(balance) || !Number.isFinite(reserve) || balance < 0 || reserve < 0) { error.textContent = 'Enter both a current balance and a reserve of zero or more.'; return; }
   data.settings = { balance, reserve, asOf: String(values.get('asOf')), currency: String(values.get('currency')) };
   await persist('Your first cash drawing is ready.');
   render();
@@ -357,9 +384,11 @@ async function submitCheckIn(event: Event) {
 async function submitSettings(event: Event) {
   event.preventDefault();
   const values = new FormData(event.currentTarget as HTMLFormElement);
-  const balance = parseAmount(values.get('balance'));
-  const reserve = parseAmount(values.get('reserve'));
-  if (!Number.isFinite(balance) || !Number.isFinite(reserve) || reserve < 0) { document.querySelector('#settings-error')!.textContent = 'Enter a valid balance and a reserve of zero or more.'; return; }
+  const balanceValue = String(values.get('balance') ?? '').trim();
+  const reserveValue = String(values.get('reserve') ?? '').trim();
+  const balance = parseAmount(balanceValue);
+  const reserve = parseAmount(reserveValue);
+  if (!balanceValue || !reserveValue || !Number.isFinite(balance) || !Number.isFinite(reserve) || reserve < 0) { document.querySelector('#settings-error')!.textContent = 'Enter both a current balance and a reserve of zero or more.'; return; }
   data.settings = { balance, reserve, asOf: String(values.get('asOf')), currency: String(values.get('currency')) };
   selectedWeek = 0;
   await persist('Starting position updated.');
@@ -414,12 +443,12 @@ async function submitLicense(event: Event) {
 async function handleAction(event: Event) {
   const target = event.currentTarget as HTMLElement;
   const action = target.dataset.action;
-  if (action === 'open-entry') openDialog('entry');
-  if (action === 'open-checkin') openDialog('checkin');
-  if (action === 'open-data') openDialog('data');
-  if (action === 'open-settings') openDialog('settings');
+  if (action === 'open-entry') openDialog('entry', null, target);
+  if (action === 'open-checkin') openDialog('checkin', null, target);
+  if (action === 'open-data') openDialog('data', null, target);
+  if (action === 'open-settings') openDialog('settings', null, target);
   if (action === 'close-dialog') closeDialog();
-  if (action === 'edit-entry') openDialog('entry', target.dataset.id ?? null);
+  if (action === 'edit-entry') openDialog('entry', target.dataset.id ?? null, target);
   if (action === 'complete-entry') {
     const entry = data.entries.find((item) => item.id === target.dataset.id);
     if (entry) { entry.completed = true; await persist(`${entry.name} marked handled and removed from the forward view.`); render(); }
@@ -439,6 +468,25 @@ async function handleAction(event: Event) {
   if (action === 'remove-license') { if (confirm('Remove the Plus license from this device? Your cash plan will remain intact.')) { clearLicense(); isPro = false; render(); } }
   if (action === 'reset-data' && confirm(`Delete this local plan, ${data.entries.length} schedule items, and ${data.checkIns.length} check-ins? This cannot be undone unless you exported a backup.`)) { data = emptyData(); await persist('Local plan deleted.'); closeDialog(); }
   if (action === 'apply-update') { reloadForUpdate = true; waitingWorker?.postMessage({ type: 'SKIP_WAITING' }); }
+  if (action === 'reset-demo') { await clearDemoData(); data = sampleData(); await persist('Demo reset with the sample plan.'); render(); }
+  if (action === 'start-real') { await clearDemoData(); location.assign('/'); }
+}
+
+function sampleData(): AppData {
+  const asOf = today();
+  const daysFromToday = (days: number) => addDays(asOf, days);
+  return {
+    version: 1,
+    settings: { balance: 18400, reserve: 6000, asOf, currency: 'USD' },
+    entries: [
+      { id: 'demo-rent', name: 'Workshop rent', amount: 3200, date: daysFromToday(2), type: 'outgoing', confidence: 'committed', note: 'Monthly lease', completed: false, createdAt: new Date().toISOString() },
+      { id: 'demo-invoice', name: 'Cedar Street invoice', amount: 5400, date: daysFromToday(5), type: 'incoming', confidence: 'likely', note: 'Approved, awaiting payment', completed: false, createdAt: new Date().toISOString() },
+      { id: 'demo-payroll', name: 'Payroll', amount: 4800, date: daysFromToday(9), type: 'outgoing', confidence: 'committed', note: 'Friday payroll', completed: false, createdAt: new Date().toISOString() },
+      { id: 'demo-tax', name: 'Quarterly tax set-aside', amount: 2100, date: daysFromToday(18), type: 'outgoing', confidence: 'committed', note: 'Tax reserve transfer', completed: false, createdAt: new Date().toISOString() }
+    ],
+    checkIns: [],
+    updatedAt: new Date().toISOString()
+  };
 }
 
 function policyConnectivity() {
@@ -452,21 +500,29 @@ async function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || import.meta.env.DEV) return;
   const registration = await navigator.serviceWorker.register('/sw.js');
   if (registration.waiting) showUpdate(registration.waiting);
-  registration.addEventListener('updatefound', () => registration.installing?.addEventListener('statechange', () => {
-    if (registration.installing?.state === 'installed' && navigator.serviceWorker.controller) showUpdate(registration.installing);
-  }));
+  registration.addEventListener('updatefound', () => {
+    const installing = registration.installing;
+    installing?.addEventListener('statechange', () => {
+      if (installing.state === 'installed' && navigator.serviceWorker.controller) showUpdate(installing);
+    });
+  });
   navigator.serviceWorker.addEventListener('controllerchange', () => { if (reloadForUpdate) location.reload(); });
 }
 function showUpdate(worker: ServiceWorker) { waitingWorker = worker; const toast = document.querySelector<HTMLElement>('#update-toast'); if (toast) toast.hidden = false; }
 
 async function init() {
+  if (demo) {
+    document.title = 'Demo — Owner Cash Check';
+    document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', 'https://owner-cash-check.sociobot.in/demo');
+  }
   try { data = await loadData(); }
   catch (error) { data = emptyData(); notice = error instanceof Error ? error.message : 'Local storage is unavailable.'; }
-  if (captureLicenseFromUrl()) { isPro = true; notice = 'License received. Plus is unlocked while verification completes.'; }
+  if (demo && !data.settings) { data = sampleData(); await persist('Sample plan ready.'); }
+  if (!demo && captureLicenseFromUrl()) { isPro = true; notice = 'License received. Plus is unlocked while verification completes.'; }
   render();
   policyConnectivity();
   registerServiceWorker().catch(() => announce('Offline setup will retry on the next visit.'));
-  if (getLicenseToken()) verifyLicense().then((result) => { if (!result.valid) { isPro = false; render(); announce('License no longer active. The free forecast and your data are unchanged.'); } else isPro = true; }).catch(() => undefined);
+  if (!demo && getLicenseToken()) verifyLicense().then((result) => { if (!result.valid) { isPro = false; render(); announce('License no longer active. The free forecast and your data are unchanged.'); } else isPro = true; }).catch(() => undefined);
 }
 
 init();

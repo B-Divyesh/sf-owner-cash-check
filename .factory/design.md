@@ -62,6 +62,7 @@ All body combinations are designed for at least WCAG AA contrast. Status is neve
   - **Negative list:** no people, hands, faces, brands, logos, readable text, watermark, currency symbols, glossy corporate 3D, neon gradient, calculators, bank cards.
 - Generator: Azure AI Foundry factory image deployment via `/opt/fleet/lib/gen-image.sh`.
 - Provenance: generated 2026-08-28 specifically for Owner Cash Check. Original project asset; no third-party marks or source imagery.
+- Social preview: `public/assets/owner-cash-check-social.webp` is a 1200×630 center crop derived from this same original hero artwork on 2026-08-28. It adds no generated content or third-party material.
 
 ### Authored assets
 

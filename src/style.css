@@ -47,6 +47,8 @@ button:active, .button-link:active { transform: translateY(1px); }
 .skip-link { position: fixed; z-index: 100; left: 16px; top: 12px; transform: translateY(-160%); background: var(--ink); color: white; padding: 10px 16px; }
 .skip-link:focus { transform: translateY(0); }
 .offline-banner { background: var(--ink); color: white; padding: 8px 16px; text-align: center; font-weight: 700; }
+.demo-banner { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px 16px; padding: 10px 16px; border-block: 1px solid var(--blue); background: #e6eff3; color: var(--ink); font-size: .9rem; }
+.demo-banner .text-button, .demo-banner .secondary { min-height: 40px; }
 .site-header { max-width: 1240px; margin: auto; padding: max(18px, env(safe-area-inset-top)) 24px 16px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .brand { display: inline-flex; align-items: center; gap: 12px; color: var(--ink); font-weight: 800; text-decoration: none; letter-spacing: -.02em; }
 .brand-mark { width: 32px; height: 32px; border: 2px solid var(--blue); display: grid; place-items: center; background: var(--sheet); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 8px 8px; }
@@ -75,6 +77,9 @@ h2 { margin-bottom: 8px; font-size: clamp(1.55rem, 3vw, 2.1rem); line-height: 1.
 h3 { margin-bottom: 8px; font-size: 1.18rem; line-height: 1.25; }
 .lede { max-width: 610px; color: var(--pencil); font-size: 1.13rem; line-height: 1.6; }
 .setup-form { max-width: 580px; margin-top: 30px; padding-top: 24px; border-top: 2px solid var(--blue); }
+.demo-cta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; max-width: 580px; margin-top: 26px; color: var(--pencil); font-size: .9rem; }
+.plain-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 18px; max-width: 580px; padding: 0; margin: 18px 0 0; list-style: none; color: var(--pencil); font-size: .82rem; }
+.plain-facts li { display: flex; gap: 6px; }.plain-facts li::before { content: '✓'; color: var(--safe); font-weight: 900; }
 label { display: grid; gap: 7px; color: var(--ink); font-weight: 700; }
 label > span small { color: var(--pencil); font-weight: 500; }
 input, select, textarea { width: 100%; min-height: 46px; padding: 9px 11px; border: 1px solid #7e919f; border-radius: 1px; background: var(--sheet); color: var(--ink); }
@@ -222,7 +227,7 @@ dialog { color: var(--ink); }
 .update-toast { position: fixed; z-index: 49; left: 20px; bottom: 20px; display: flex; align-items: center; gap: 14px; padding: 10px 14px; background: var(--ink); color: white; }
 .update-toast button { color: white; }
 footer { max-width: 1240px; margin: 0 auto; padding: 28px 24px max(28px, env(safe-area-inset-bottom)); border-top: 1px solid var(--grid); display: grid; grid-template-columns: 1fr auto; gap: 6px 24px; color: var(--pencil); font-size: .82rem; }
-footer p { margin: 0; } footer nav { display: flex; gap: 18px; }.generated-note { grid-column: 1 / -1; }
+footer p { margin: 0; } footer nav { display: flex; gap: 18px; }.generated-note { grid-column: 1 / -1; }.build-note { grid-column: 1 / -1; font-family: 'IBM Plex Mono', monospace; font-size: .72rem; }
 
 .policy-page { max-width: 800px; margin: 0 auto; padding: 54px 24px 80px; }
 .policy-page h1 { font-size: clamp(2.4rem, 5vw, 4rem); }
@@ -237,12 +242,12 @@ footer p { margin: 0; } footer nav { display: flex; gap: 18px; }.generated-note 
   body { font-size: 16px; background-size: 20px 20px; }
   .site-header { padding-inline: 16px; }.brand { font-size: .92rem; }.site-header nav { gap: 5px; }.site-header .primary { padding-inline: 11px; }.workspace, .welcome { padding: 28px 16px 64px; }
   .welcome { display: flex; flex-direction: column; gap: 36px; }.welcome h1 { font-size: 2.8rem; }.welcome-copy { width: 100%; }.hero-art { order: -1; padding: 7px 7px 34px; }.hero-art figcaption { font-size: .64rem; }
-  .field-row, .compact-row { grid-template-columns: 1fr; }.title-row, .section-heading { align-items: start; }.title-row { display: grid; }.settings-link { justify-self: start; }.check-callout { grid-template-columns: auto 1fr; }.check-callout .primary { grid-column: 1 / -1; width: 100%; }
+  .field-row, .compact-row, .plain-facts { grid-template-columns: 1fr; }.title-row, .section-heading { align-items: start; }.title-row { display: grid; }.settings-link { justify-self: start; }.check-callout { grid-template-columns: auto 1fr; }.check-callout .primary { grid-column: 1 / -1; width: 100%; }
   .readout { margin-top: 22px; padding: 24px 18px; gap: 26px; }.key-stats { grid-template-columns: 1fr; margin: 0; }.key-stats div { display: grid; grid-template-columns: 1fr auto; align-items: baseline; padding: 9px 0; border-left: 0; border-top: 1px solid var(--grid); }.key-stats dd { margin: 0; }.key-stats small { grid-column: 1 / -1; text-align: right; }
   .legend { display: none; }.cash-chart { height: 230px; }.week-ruler { grid-template-columns: repeat(13, 62px); }.week-detail { padding: 18px; }.week-math { grid-template-columns: 1fr 1fr; gap: 10px; }.week-math div { padding: 5px 9px; }.week-math div:nth-child(odd) { border-left: 0; }
   .ledger-row { grid-template-columns: 48px 34px 1fr auto; gap: 10px; }.entry-amount { grid-column: 3; }.row-actions { grid-column: 4; grid-row: 1 / span 2; flex-direction: column; }.empty-state { grid-template-columns: auto 1fr; padding: 24px 18px; }.empty-state .primary { grid-column: 1 / -1; width: 100%; }.history li { grid-template-columns: 1fr 1fr; }.history li span:last-of-type { grid-column: 2; }.history p { grid-column: 1 / -1; }
   .sheet-dialog { width: calc(100% - 16px); max-height: calc(100vh - 16px); }.dialog-heading, .sheet-dialog form, .data-sections { padding: 18px; }.dialog-actions { flex-wrap: wrap; }.dialog-actions .primary, .dialog-actions .secondary { flex: 1; }.dialog-actions .danger-button { width: 100%; margin: 0; }.inline-form { align-items: stretch; flex-direction: column; }.button-cluster > * { flex: 1; }.policy-page { padding-inline: 16px; }.policy-page article { padding: 22px 18px; }
-  footer { grid-template-columns: 1fr; padding-inline: 16px; }.generated-note { grid-column: 1; }
+  .demo-banner { align-items: stretch; justify-content: flex-start; }.demo-banner strong, .demo-banner span { flex-basis: 100%; }.demo-banner button { flex: 1; } footer { grid-template-columns: 1fr; padding-inline: 16px; }.generated-note, .build-note { grid-column: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
