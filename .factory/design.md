@@ -20,7 +20,7 @@ This is intentionally a single light treatment. A blueprint is a shared working 
 | `safe` | `#246B52` | cash at/above reserve, always paired with label/icon |
 | `warning` | `#9A4D0A` | close to reserve, paired with “tight” |
 | `danger` | `#A12B2B` | below reserve, paired with “below reserve” |
-| `signal` | `#D85B28` | the single high-attention check-in marker |
+| `signal` | `#B84417` | the single high-attention check-in marker; AA with white text |
 
 All body combinations are designed for at least WCAG AA contrast. Status is never encoded by color alone.
 

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Owner Cash Check icon">
+  <rect width="512" height="512" rx="96" fill="#f3f0e7"/>
+  <path d="M80 104h352v304H80z" fill="#fbfaf5" stroke="#175c8c" stroke-width="18"/>
+  <path d="M80 184h352M160 104v304M240 104v304M320 104v304M400 104v304M80 264h352M80 344h352" stroke="#c9d7df" stroke-width="8"/>
+  <path d="M112 333c39-16 58-82 101-82 44 0 48 53 87 53 44 0 46-112 100-112" fill="none" stroke="#102a43" stroke-linecap="round" stroke-width="24"/>
+  <circle cx="380" cy="355" r="58" fill="#d85b28"/>
+  <path d="m350 355 20 20 42-48" fill="none" stroke="#fbfaf5" stroke-linecap="round" stroke-linejoin="round" stroke-width="18"/>
+</svg>
